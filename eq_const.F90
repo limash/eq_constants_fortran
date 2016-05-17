@@ -152,7 +152,7 @@ contains
         real(rk):: ln_kc1_p0, ln_kc1_pp
         real(rk):: zt_degc, zrt, zdvi, zdki
     
-        real(rk):: TKR, TLOG, SQ, SLOG !, pk
+        real(rk):: TKR, TLOG, SQ, SLOG!, pk
         
         !t_k = 25._rk + 273.15_rk
         !s = 35._rk
@@ -204,7 +204,7 @@ contains
         real(rk):: ln_kc2_p0, ln_kc2_pp
         real(rk):: zt_degc, zrt, zdvi, zdki
     
-        real(rk):: TKR, TLOG, SQ, SLOG !, pk
+        real(rk):: TKR, TLOG, SQ, SLOG!, pk
         
         !t_k = 25._rk + 273.15_rk
         !s = 35._rk
@@ -377,8 +377,7 @@ contains
         !Pressure correction
         zt_degc     = t_k - t_k_zerodegc
         zrt         = gasconst_bar_cm3_o_mol_k * t_k
-        zdvi        = -23.12_rk + zt_degc*(0.1758_rk + zt_degc* &
-            (-2.647E-03_rk))
+        zdvi        = -23.12_rk + zt_degc*(0.1758_rk + zt_degc*-2.647E-03_rk)
         zdki        = (-5.15_rk + zt_degc*0.09_rk)*1.0E-03_rk
         ln_kp2_pp   = (-zdvi + zdki*p_bar/2._rk)*p_bar/zrt
 
@@ -500,8 +499,8 @@ contains
 
         ln_knh4_p0 = -0.25444_rk -  6285.33_rk/t_k + 0.0001635_rk*t_k &
                + ( 0.46532_rk - 123.7184_rk/t_k) * SQRT(s)            &
-               + (-0.01992_rk +  3.17556_rk/t_k) * s   
-
+               + (-0.01992_rk +  3.17556_rk/t_k) * s
+        
         !Pressure correction
         zt_degc     = t_k - t_k_zerodegc
         zrt         = gasconst_bar_cm3_o_mol_k * t_k
@@ -633,7 +632,11 @@ contains
         real(rk):: zcvt_to_kgsw, zionst, zsqrti
         real(rk):: zln_khso4_p0, zln_khso4_pp
         !ionic strength in mol/kg-SW, for given salinity
-        real(rk):: ion_strength
+        real(rk):: ion_strength!, ln_khso4
+
+        !t_k = 25._rk + 273.15_rk
+        !s = 35._rk
+        !p_bar = 0._rk
         
         zcvt_to_kgsw = 1._rk - 0.001005_rk*s !Handbook (2007)
         ion_strength = (0.019924D+00*s) !Handbook (2007)
@@ -653,6 +656,10 @@ contains
         zln_khso4_pp = (-zdvi + zdki*p_bar/2._rk)*p_bar/zrt
 
         ans = zcvt_to_kgsw * EXP(zln_khso4_p0 + zln_khso4_pp)
+        
+        !for T=25C, S=35psu, P=0bars: ln_khso4 = -2.3 Handbook 2007
+        !CHECKED 16_05_2016 Shamil
+        !ln_khso4 = zln_khso4_p0 + log(zcvt_to_kgsw)
 
     END FUNCTION AK_HSO4_DICK90
 
@@ -678,6 +685,10 @@ contains
         real(rk):: ln_khf_p0, ln_khf_pp
         real(rk):: zt_degc, zrt, zdvi, zdki
 
+        !t_k = 25._rk + 273.15_rk
+        !s = 35._rk
+        !p_bar = 0._rk
+
         ln_khf_p0 = 874._rk/t_k-9.68_rk+0.111_rk*SQRT(s)
 
         !Pressure correction
@@ -688,6 +699,9 @@ contains
         ln_khf_pp  = (-zdvi + zdki*p_bar/2._rk)*p_bar/zrt
 
         ans = EXP(ln_khf_p0 + ln_khf_pp)
+        
+        !for T=25C, S=35psu, P=0bars: ln_khf_p0 = -6.09 Handbook 2007
+        !CHECKED 16_05_2016 Shamil
 
     end function flu_pefr87
 
@@ -712,14 +726,18 @@ contains
         real(rk):: ln_kw_p0, ln_kw_pp
         real(rk):: zt_degc, zrt, zdvi, zdki
         
-        real(rk):: TKR, TLOG, SQ
+        real(rk):: TKR, TLOG, SQ!, pk
+        
+        !t_k = 25._rk + 273.15_rk
+        !s = 35._rk
+        !p_bar = 300._rk
 
         TKR  = 1./t_k
         TLOG = LOG(t_k)
         SQ   = SQRT(s)
         
-        ln_kw_p0 = -13847.26*TKR + 148.96502 - 23.6521*TLOG &
-              + (118.67*TKR - 5.977 + 1.0495*TLOG)*SQ - 0.01615*s
+        ln_kw_p0 = -13847.26_rk*TKR + 148.96502_rk - 23.6521_rk*TLOG &
+              + (118.67_rk*TKR - 5.977_rk + 1.0495_rk*TLOG)*SQ - 0.01615_rk*s
 
         !Pressure correction
         zt_degc   = t_k - t_k_zerodegc
@@ -729,6 +747,11 @@ contains
         ln_kw_pp  = (-zdvi + zdki*p_bar/2._rk)*p_bar/zrt
 
         ans = EXP(ln_kw_p0 + ln_kw_pp)
+        
+        !for T=25C, S=35psu, P=0bars:    pk = 13.2173    
+        !for T=25C, S=35psu, P=300bars:  pk = 13.1039
+        !CHECKED 16_05_2016 Shamil
+        !pk = -LOG10(ans)
 
     end function water_doe94
 
@@ -742,13 +765,20 @@ contains
         real(rk), intent(in):: t_k, s
 
         !ln_kc0_p0       : ln_kc0 at p_bar = 0
-        real(rk):: ln_kc0_p0
+        real(rk):: ln_kc0_p0!, pk
+        
+        !t_k = 25._rk + 273.15_rk
+        !s = 35._rk
 
         ln_kc0_p0 = -60.2409_rk+9345.17_rk/t_k+23.3585_rk*log((t_k)/100._rk) &
             +s*(0.023517_rk-0.023656_rk*t_k/100._rk &
             +0.0047036_rk*((t_k/100._rk)*(t_k/100._rk)))
 
         ans = EXP(ln_kc0_p0)
+        
+        !for T=25C, S=35psu, P=0bars:    pk = 1.5468
+        !CHECKED 16_05_2016 Shamil
+        !pk = -LOG10(ans)
 
     end function carb0_weiss74
 
